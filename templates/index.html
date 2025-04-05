@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plant Disease Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+</head>
+
+<body>
+
+    <h1>🌿 Plant Disease Detection</h1>
+
+    <form action="/predict" method="post" enctype="multipart/form-data" id="upload-form">
+        
+        <input type="file" name="file" id="file-input" accept="image/*" required>
+
+        <label for="language" style="margin-top: 10px;"><strong>🌐 Select Language:</strong></label>
+        <select name="language" id="language">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="ta">Tamil</option>
+            <option value="te">Telugu</option>
+            <option value="bn">Bengali</option>
+            <option value="mr">Marathi</option>
+            <option value="gu">Gujarati</option>
+            <option value="kn">Kannada</option>
+            <option value="ml">Malayalam</option>
+            <option value="ur">Urdu</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+        </select>
+
+        <button type="submit">Upload & Detect</button>
+        <button type="button" onclick="openCamera()">📸 Click Live Photo</button>
+        <button type="button" onclick="retakePhoto()">🔁 Retake Photo</button>
+
+        <video id="video" width="300" height="225" autoplay></video>
+        <canvas id="canvas" width="300" height="225"></canvas>
+
+        <div id="loader">🔍 Detecting disease, please wait...</div>
+    </form>
+
+    {% if prediction %}
+    <div class="result">
+        <h2>🌱 Prediction: {{ prediction }}</h2>
+        <p><strong>📝 Description:</strong> {{ description }}</p>
+        <p><strong>🛠️ Prevention Steps:</strong> {{ steps }}</p>
+        <p><strong>🧪 Recommended Fertilizers:</strong> {{ fertilizers }}</p>
+    </div>
+    {% else %}
+    <p class="result">📷 Upload an image or take a live photo to detect plant disease.</p>
+    {% endif %}
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const loader = document.getElementById('loader');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const fileInput = document.getElementById('file-input');
+
+        form.addEventListener('submit', () => {
+            loader.style.display = 'block';
+        });
+
+        function openCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    canvas.style.display = 'none';
+
+                    setTimeout(() => {
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob(blob => {
+                            const file = new File([blob], "live_capture.jpg", { type: "image/jpeg" });
+
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            fileInput.files = dataTransfer.files;
+
+                            stream.getTracks().forEach(track => track.stop());
+                            video.style.display = 'none';
+                            canvas.style.display = 'block';
+                        }, 'image/jpeg');
+                    }, 2500);
+                })
+                .catch(err => {
+                    alert('📵 Camera access denied or not available.');
+                });
+        }
+
+        function retakePhoto() {
+            canvas.style.display = 'none';
+            openCamera();
+        }
+    </script>
+
+</body>
+</html>
